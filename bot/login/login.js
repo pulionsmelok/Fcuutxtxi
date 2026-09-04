@@ -1129,23 +1129,38 @@ function createCallBackListen(api, deps, dataGban) {
 async function startBot() {
   console.log(colors.hex("#f5ab00")(createLine("START TELEGRAM LOGIN", true)));
 
-  // Check whether a newer official GoatBot V2 version is available.
-  // Notification is shown only when this bot is already on the latest version.
+  // Check official GoatBot V2 version.
+  // If an update is available, hide NOTIFICATION. If already latest, show it.
   let updateAvailable = false;
   try {
     const { data } = await axios.get(
       "https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2/main/package.json",
       { timeout: 10000 }
     );
+
     const latestVersion = data?.version;
-    if (latestVersion && compareVersion(latestVersion, currentVersion) > 0) {
-      updateAvailable = true;
-      log.warn("UPDATE", `New version available: v${latestVersion} | Current: v${currentVersion}`);
+
+    if (latestVersion && compareVersion(currentVersion, latestVersion) >= 0) {
+      log.info(
+        "UPDATE",
+        `✅ | You are using the latest version of GoatBot V2 (v${currentVersion}).`
+      );
     }
-  } catch (err) {
-    // If the update server cannot be reached, keep the normal notification behavior.
+    else if (latestVersion) {
+      updateAvailable = true;
+      log.warn(
+        "UPDATE",
+        `ℹ️ | You are using the old version of GoatBot V2 (v${currentVersion}). Latest version: v${latestVersion}.`
+      );
+    }
+    else {
+      log.warn("UPDATE", "ℹ️ | Could not determine the latest GoatBot V2 version.");
+    }
+  }
+  catch (err) {
+    // Do not treat a network error as an available update.
     updateAvailable = false;
-    log.warn("UPDATE", "Could not check for updates");
+    log.warn("UPDATE", "ℹ️ | Could not check for updates.");
   }
 
   let token = readTokenFile();
