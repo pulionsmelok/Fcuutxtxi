@@ -291,6 +291,14 @@ class TelegramApi {
       chat_id: chatId,
       disable_web_page_preview: false,
     };
+    // Preserve Telegram reply_markup passed inside the message form.
+    // message.reply({ body, reply_markup }) is the normal command API shape.
+    if (form && typeof form === "object") {
+      if (form.reply_markup) base.reply_markup = form.reply_markup;
+      else if (form.inline_keyboard) base.reply_markup = { inline_keyboard: form.inline_keyboard };
+    }
+
+    // Also support reply_markup/inline_keyboard passed as the callback/options argument.
     if (callback && typeof callback === "object" && !Array.isArray(callback)) {
       if (callback.reply_markup) base.reply_markup = callback.reply_markup;
       else if (callback.inline_keyboard) base.reply_markup = { inline_keyboard: callback.inline_keyboard };
