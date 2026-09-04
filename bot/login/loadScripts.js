@@ -59,9 +59,9 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 		const Files = readdirSync(fullPathModules)
 			.filter(file =>
 				file.endsWith(".js") &&
-				!file.endsWith("eg.js") && // ignore example file
-				(process.env.NODE_ENV == "development" ? true : !file.match(/(dev)\.js$/g)) && // ignore dev file in production mode
-				!configCommands[folderModules == "cmds" ? "commandUnload" : "commandEventUnload"]?.includes(file) // ignore unload command
+				!file.endsWith("eg.js") &&
+				(process.env.NODE_ENV == "development" ? true : !file.match(/(dev)\.js$/g)) &&
+				!configCommands[folderModules == "cmds" ? "commandUnload" : "commandEventUnload"]?.includes(file)
 			);
  
 		const commandError = [];
@@ -77,9 +77,6 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 					allPackage = allPackage.map(p => p.match(/[`'"]([^`'"]+)[`'"]/)[1])
 						.filter(p => p.indexOf("/") !== 0 && p.indexOf("./") !== 0 && p.indexOf("../") !== 0 && p.indexOf(__dirname) !== 0);
 					for (let packageName of allPackage) {
-						// @user/abc => @user/abc
-						// @user/abc/dist/xyz.js => @user/abc
-						// @user/abc/dist/xyz => @user/abc
 						if (packageName.startsWith('@'))
 							packageName = packageName.split('/').slice(0, 2).join('/');
 						else
@@ -89,7 +86,6 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 							packageAlready.push(packageName);
 							if (!existsSync(`${process.cwd()}/node_modules/${packageName}`)) {
 								const wating = setInterval(() => {
-									// loading.info('PACKAGE', `${spinner[count % spinner.length]} Installing package ${packageName} for ${text} ${file}`);
 									loading.info('PACKAGE', `${spinner[count % spinner.length]} Installing package ${colors.yellow(packageName)} for ${text} ${colors.yellow(file)}`);
 									count++;
 								}, 80);
@@ -113,32 +109,32 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 				// —————————————— CHECK CONTENT SCRIPT —————————————— //
 				global.temp.contentScripts[folderModules][file] = contentFile;
  
- 
 				const command = require(pathCommand);
 				command.location = pathCommand;
 				const configCommand = command.config;
-				
+
 				// ——————————————— CHECK SYNTAXERROR ——————————————— //
 				if (!configCommand)
 					throw new Error(`config of ${text} undefined`);
-					
+
 				const commandName = configCommand.name;
-				
+
 				if (!configCommand.category)
 					throw new Error(`category of ${text} undefined`);
 				if (!commandName)
 					throw new Error(`name of ${text} undefined`);
-			
+
+				// onStart optional
 				if (command.onStart && typeof command.onStart !== "function")
 					throw new Error(`onStart of ${text} must be a function`);
-					
+
 				if (GoatBot[setMap].has(commandName))
 					throw new Error(`${text} "${commandName}" already exists with file "${removeHomeDir(GoatBot[setMap].get(commandName).location || "")}"`);
-					
+
 				const { onFirstChat, onChat, onLoad, onEvent, onAnyEvent } = command;
 				const { envGlobal, envConfig } = configCommand;
 				const { aliases } = configCommand;
-				
+
 				// ————————————————— CHECK ALIASES —————————————————— //
 				const validAliases = [];
 				if (aliases) {
@@ -154,7 +150,7 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 					for (const alias of validAliases)
 						GoatBot.aliases.set(alias, commandName);
 				}
-				
+
 				// ——————————————— CHECK ENV GLOBAL ——————————————— //
 				if (envGlobal) {
 					if (typeof envGlobal != "object" || typeof envGlobal == "object" && Array.isArray(envGlobal))
@@ -169,7 +165,7 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 						}
 					}
 				}
-				
+
 				// ———————————————— CHECK CONFIG CMD ——————————————— //
 				if (envConfig) {
 					if (typeof envConfig != "object" || typeof envConfig == "object" && Array.isArray(envConfig))
@@ -187,36 +183,35 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 						}
 					}
 				}
-				
+
 				// ————————————————— CHECK ONLOAD ————————————————— //
 				if (onLoad) {
 					if (typeof onLoad != "function")
 						throw new Error("The value of \"onLoad\" must be function");
 					await onLoad({ api, threadModel, userModel, dashBoardModel, globalModel, threadsData, usersData, dashBoardData, globalData });
 				}
-				
+
 				// ——————————————— CHECK RUN ANYTIME ——————————————— //
 				if (onChat)
 					GoatBot.onChat.push(commandName);
-					
+
 				// ——————————————— CHECK ONFIRSTCHAT ——————————————— //
 				if (onFirstChat)
 					GoatBot.onFirstChat.push({ commandName, threadIDsChattedFirstTime: [] });
-					
+
 				// ————————————————— CHECK ONEVENT ————————————————— //
 				if (onEvent)
 					GoatBot.onEvent.push(commandName);
-					
+
 				// ———————————————— CHECK ONANYEVENT ———————————————— //
 				if (onAnyEvent)
 					GoatBot.onAnyEvent.push(commandName);
-					
+
 				// —————————————— IMPORT TO GLOBALGOAT —————————————— //
 				GoatBot[setMap].set(commandName.toLowerCase(), command);
 				commandLoadSuccess++;
-				
+
 				// ————————————————— COMPARE COMMAND (removed in open source) ————————————————— //
- 
 				global.GoatBot[folderModules == "cmds" ? "commandFilesPath" : "eventCommandsFilesPath"].push({
 					// filePath: pathCommand,
 					filePath: path.normalize(pathCommand),
@@ -229,10 +224,15 @@ module.exports = async function (api, threadModel, userModel, dashBoardModel, gl
 					error
 				});
 			}
-			
-			loading.info('LOADED', `${colors.green(`${commandLoadSuccess}`)}${commandError.length ? `, ${colors.red(`${commandError.length}`)}` : ''}`);
+
+			loading.info(
+				'LOADED',
+				`${colors.green(`${commandLoadSuccess}`)} | ${colors.yellow(file)}${commandError.length ? `, ${colors.red(`${commandError.length}`)}` : ''}`
+			);
 		}
+
 		console.log("\r");
+
 		if (commandError.length > 0) {
 			log.err("LOADED", getText('loadScripts', 'loadScriptsError', colors.yellow(text)));
 			for (const item of commandError)
