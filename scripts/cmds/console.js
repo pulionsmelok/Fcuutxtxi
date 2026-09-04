@@ -14,6 +14,10 @@ module.exports = {
     category: "INFO"
   },
 
+  onStart: async function () {
+    return;
+  },
+
   onChat: async function ({ event }) {
 
     const msg = event;
@@ -26,8 +30,7 @@ module.exports = {
     if (!chatId || !userId) return;
 
     const firstName =
-      msg.from?.first_name ||
-      "";
+      msg.from?.first_name || "";
 
     const lastName =
       msg.from?.last_name
@@ -39,8 +42,7 @@ module.exports = {
       "Unknown User";
 
     const threadName =
-      msg.chat?.title ||
-      null;
+      msg.chat?.title || null;
 
     let chatType, title, user;
 
