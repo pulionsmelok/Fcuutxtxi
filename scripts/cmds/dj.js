@@ -35,8 +35,8 @@ module.exports = {
 
     try {
       loading = await bot.sendMessage(
-        chatId,
-        "🎧 Loading DJ Audio... Please Wait ⏰"
+        "Loading DJ Audio... Please Wait ⏰",
+        chatId
       );
 
       const shuffledLinks = [...new Set(links)].sort(
@@ -68,8 +68,8 @@ module.exports = {
           await bot.sendAudio(chatId, res.data, {
             caption: "╭━━━❮ 🎧 DJ MUSIC ❯━━━╮\n" +
               "├‣ 🔊 DJ Audio\n" +
-              "├‣ 🎵 Enjoy The Music\n" +
-              "╰━━━━━━━━━━━━━━━━╯"
+              "├‣  👑 DEV : SK SIDDIK\n" +
+              "╰━━━━━━━━━━━━╯"
           });
 
           sent = true;
@@ -97,9 +97,9 @@ module.exports = {
 
       try {
         await bot.sendMessage(
-          chatId,
-          "❌ Failed to load DJ music, please try again!"
-        );
+        "❌ Failed to load DJ music, please try again!",
+        chatId
+      );
       } catch (sendErr) {
         console.error(
           "❌ Error message failed:",
@@ -109,11 +109,11 @@ module.exports = {
 
     } finally {
      
-      if (loading?.message_id) {
+      if (loading?.messageID || loading?.message_id) {
         try {
           await bot.deleteMessage(
             chatId,
-            loading.message_id
+            (loading.messageID || loading.message_id)
           );
         } catch {}
       }

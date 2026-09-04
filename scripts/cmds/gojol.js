@@ -26,8 +26,8 @@ module.exports = {
       }
 
       const loading = await bot.sendMessage(
-        chatId,
-        "Loading Islamic Gojol... Please Wait ⏰"
+        "Loading Islamic Gojol... Please Wait ⏰",
+        chatId
       );
 
       const links = [
@@ -73,7 +73,7 @@ module.exports = {
           "╭━━━❮ 🎵 ISLAMIC GOJOL ❯━━━╮\n" +
           "├‣ 🕌 Islamic Gojol\n" +
           "├‣ 👑 DEV : SK SIDDIK\n" +
-          "╰━━━━━━━━━━━━━━━━━━╯"
+          "╰━━━━━━━━━━━━━━━╯"
       });
 
       try {
@@ -95,8 +95,8 @@ module.exports = {
 
       try {
         await bot.sendMessage(
-          chatId,
-          `❌ Failed to load audio!\n${err.message}`
+          `❌ Failed to load audio!\n${err.message}`,
+          chatId
         );
       } catch {}
     }
