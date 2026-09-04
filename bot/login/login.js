@@ -1129,6 +1129,25 @@ function createCallBackListen(api, deps, dataGban) {
 async function startBot() {
   console.log(colors.hex("#f5ab00")(createLine("START TELEGRAM LOGIN", true)));
 
+  // Check whether a newer official GoatBot V2 version is available.
+  // Notification is shown only when this bot is already on the latest version.
+  let updateAvailable = false;
+  try {
+    const { data } = await axios.get(
+      "https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2/main/package.json",
+      { timeout: 10000 }
+    );
+    const latestVersion = data?.version;
+    if (latestVersion && compareVersion(latestVersion, currentVersion) > 0) {
+      updateAvailable = true;
+      log.warn("UPDATE", `New version available: v${latestVersion} | Current: v${currentVersion}`);
+    }
+  } catch (err) {
+    // If the update server cannot be reached, keep the normal notification behavior.
+    updateAvailable = false;
+    log.warn("UPDATE", "Could not check for updates");
+  }
+
   let token = readTokenFile();
   if (!/^\d{6,12}:[A-Za-z0-9_-]{20,}$/.test(token)) {
     log.err("LOGIN TELEGRAM", "Invalid bot token in account.txt");
@@ -1220,7 +1239,10 @@ async function startBot() {
       log.master("ADMINBOT", `[${++i}] ${uid}`);
     }
   }
-  log.master("NOTIFICATION", String(notification).trim());
+  // Show official notification only when there is no newer update available.
+  if (!updateAvailable) {
+    log.master("NOTIFICATION", String(notification).trim());
+  }
 
   const callback = createCallBackListen(api, deps, dataGban);
   await stopListening(api);
