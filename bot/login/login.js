@@ -1132,35 +1132,53 @@ async function startBot() {
   // Check official GoatBot V2 version.
   // If an update is available, hide NOTIFICATION. If already latest, show it.
   let updateAvailable = false;
-  try {
-    const { data } = await axios.get(
-      "https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2/main/package.json",
-      { timeout: 10000 }
-    );
+  let latestVersion = null;
 
-    const latestVersion = data?.version;
+  // The official repository has used different default branches over time.
+  // Try both branches so the update checker does not fail with a 404.
+  const versionUrls = [
+    "https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2/master/package.json",
+    "https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2/main/package.json"
+  ];
 
-    if (latestVersion && compareVersion(currentVersion, latestVersion) >= 0) {
+  for (const url of versionUrls) {
+    try {
+      const { data } = await axios.get(url, {
+        timeout: 15000,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (GoatBot-V2 Update Checker)",
+          "Accept": "application/json,text/plain,*/*"
+        }
+      });
+
+      if (data?.version) {
+        latestVersion = String(data.version).trim();
+        break;
+      }
+    }
+    catch (_) {
+      // Try the next official branch URL.
+    }
+  }
+
+  if (latestVersion) {
+    if (compareVersion(currentVersion, latestVersion) >= 0) {
       log.info(
         "UPDATE",
         `✅ | You are using the latest version of GoatBot V2 (v${currentVersion}).`
       );
     }
-    else if (latestVersion) {
+    else {
       updateAvailable = true;
-      log.warn(
+      log.info(
         "UPDATE",
         `ℹ️ | You are using the old version of GoatBot V2 (v${currentVersion}). Latest version: v${latestVersion}.`
       );
     }
-    else {
-      log.warn("UPDATE", "ℹ️ | Could not determine the latest GoatBot V2 version.");
-    }
   }
-  catch (err) {
-    // Do not treat a network error as an available update.
-    updateAvailable = false;
-    log.warn("UPDATE", "ℹ️ | Could not check for updates.");
+  else {
+    // Keep the bot running if GitHub is temporarily unreachable.
+    log.warn("UPDATE", "⚠️ | Update status could not be checked right now.");
   }
 
   let token = readTokenFile();
