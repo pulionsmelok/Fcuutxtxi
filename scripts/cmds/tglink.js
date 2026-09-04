@@ -67,12 +67,15 @@ module.exports = {
       );
 
     } catch (err) {
-      console.log("❌ linkfb error:", err.message);
-
-      bot.sendMessage(
-        event.chat?.id,
-        "❌ Failed to get profile link"
-      );
+      console.log("❌ tglink error:", err.message);
+      try {
+        if (event.chat?.id) {
+          await bot.sendMessage(
+            event.chat.id,
+            "❌ Failed to get profile link"
+          );
+        }
+      } catch (_) {}
     }
   }
 };

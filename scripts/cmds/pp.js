@@ -50,7 +50,7 @@ module.exports = {
       });
 
     } catch (error) {
-      global.log.error('Error in pp command:', error);
+      console.error('Error in pp command:', error);
       message.reply(`❌ Error: ${error.message}`);
     }
   }

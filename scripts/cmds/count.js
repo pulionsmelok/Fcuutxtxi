@@ -90,7 +90,7 @@ Examples:
       return message.reply(response);
 
     } catch (error) {
-      global.log.error('Error in count command:', error);
+      console.error('Error in count command:', error);
       return message.reply(`❌ Error: ${error.message}`);
     }
   }
