@@ -68,14 +68,12 @@ module.exports = {
         throw new Error("Audio download failed");
       }
 
-      await message.sendAttachment({
-        body:
+      await bot.sendAudio(chatId, filePath, {
+        caption:
           "╭━━━❮ 🎵 ISLAMIC GOJOL ❯━━━╮\n" +
           "├‣ 🕌 Islamic Gojol\n" +
           "├‣ 👑 DEV : SK SIDDIK\n" +
-          "╰━━━━━━━━━━━━━━━━━━╯",
-
-        attachment: filePath
+          "╰━━━━━━━━━━━━━━━━━━╯"
       });
 
       try {

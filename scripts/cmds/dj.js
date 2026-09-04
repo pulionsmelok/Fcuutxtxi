@@ -9,10 +9,10 @@ module.exports = {
     guide: "/dj"
   },
 
-  onStart: async ({ bot, event, message}) => {
+  onStart: async ({ bot, event }) => {
     const axios = require("axios");
 
-    const chatId = event.threadID || event?.chat?.id || event?.message?.chat?.id || event?.raw?.chat?.id || message?.threadID || event?.from?.id;
+    const chatId = event?.threadID || event?.chat?.id || event?.message?.chat?.id || event?.raw?.chat?.id || event?.from?.id;
 
     if (!chatId) return;
 
