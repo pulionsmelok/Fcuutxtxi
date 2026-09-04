@@ -102,7 +102,7 @@ async function getTelegramAvatar(api, userID) {
     );
   }
 
-  const fileURL = await telegram.getFileLink(photo.file_id);
+  const fileURL = await api.getFileLink(photo.file_id);
 
   const response = await axios.get(
     fileURL,

@@ -22,15 +22,20 @@ function safeFileName(fileName) {
 }
 
 function getTelegramDocument(event) {
-	const msg = event?.message || event?.raw || {};
-	
-	
-	return msg.document || msg.reply_to_message?.document || event?.messageReply?.message?.document || null;
+	const msg = event?.message || event?.raw || event || {};
+
+	return msg.document 
+		|| msg.reply_to_message?.document 
+		|| event?.messageReply?.message?.document 
+		|| event?.messageReply?.document 
+		|| event?.raw?.document 
+		|| null;
 }
 
 function getTelegramBot(api) {
 	
-	return api?.bot || global.GoatBot?.api?.bot || global.GoatBot?.bot || global.GoatBot?.telegram || global.telegramBot || global.bot;
+	if (api && typeof api.getFileLink === "function") return api;
+	return api?.bot || global.GoatBot?.telegramApi || global.GoatBot?.api || global.GoatBot?.bot || global.GoatBot?.telegram || global.telegramBot || global.bot;
 }
 
 async function downloadTelegramDocument(event, api) {
@@ -61,10 +66,10 @@ function commandButtons(action, fileName, userID) {
 		reply_markup: {
 			inline_keyboard: [
 				[
-					{ text: "♻️ Replace", callback_data: `cmd_replace_${userID}_${fileName}` },
-					{ text: "✏️ Rename", callback_data: `cmd_rename_${userID}_${fileName}` }
+					{ text: "🔄 | Replace", callback_data: `cmd_replace_${userID}_${fileName}` },
+					{ text: "✏ | Rename", callback_data: `cmd_rename_${userID}_${fileName}` }
 				],
-				[{ text: "❌ Cancel", callback_data: `cmd_cancel_${userID}_${fileName}` }]
+				[{ text: "❌ | Cancel", callback_data: `cmd_cancel_${userID}_${fileName}` }]
 			]
 		}
 	};
@@ -84,7 +89,7 @@ module.exports = {
 	config: {
 		name: "cmd",
 		version: "1.17",
-		author: "NTKhang",
+		author: "SK-SIDDIK-KHAN",
 		countDown: 5,
 		role: 2,
 		description: {

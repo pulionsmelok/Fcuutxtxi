@@ -4,7 +4,7 @@ module.exports = {
     version: "1.1",
     author: "SK-SIDDIK-KHAN",
     cooldown: 5,
-    role: 1,
+    role: 2,
     category: "admin",
     usePrefix: false
   },
@@ -17,37 +17,37 @@ module.exports = {
       return message.reply("⚠️ | Use: lift <minute>");
     }
 
-    const chatId = event?.chat?.id;
+    const chatId = event.threadID || event?.chat?.id || event?.message?.chat?.id || event?.raw?.chat?.id || message?.threadID || event?.from?.id;
 
     if (!chatId) {
-      return console.log("❌ chatId not found!");
+      return console.log("❌ | chatId not found!");
     }
 
     message.reply(
-`╭────────────────⊙
+`╭──────────────⊙
 ├─☾ JUST WAIT
 ├─☾ ${delayMinutes} MINUTE
 ├─☾ SK SIDDIK KHAN
-╰────────────────⊙`
+╰──────────────⊙`
     );
 
     setTimeout(() => {
-      console.log("⏳ Time finished, leaving group...");
+      console.log("⏳ | Time finished, leaving group...");
 
       if (bot?.leaveChat) {
         bot.leaveChat(chatId)
           .then(() => {
-            console.log("✅ Bot left successfully");
+            console.log("✅ | Bot left successfully");
           })
           .catch(err => {
             if (err?.response?.statusCode === 403) {
-              console.log("⚠️ Bot already left the group");
+              console.log("⚠️| Bot already left the group");
             } else {
-              console.error("❌ Lift Error:", err);
+              console.error("❌ | Lift Error:", err);
             }
           });
       } else {
-        console.log("❌ leaveChat function not found");
+        console.log("❌ | leaveChat function not found");
       }
 
     }, delayMinutes * 60 * 1000);

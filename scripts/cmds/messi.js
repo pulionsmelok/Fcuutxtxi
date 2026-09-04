@@ -42,7 +42,7 @@ module.exports = {
       "https://i.imgur.com/YWyI4hP.jpg"
     ];
 
-    const chatId = event?.chat?.id || event?.from?.id;
+    const chatId = event.threadID || event?.chat?.id || event?.message?.chat?.id || event?.raw?.chat?.id || message?.threadID || event?.from?.id;
 
     if (!chatId) return;
 

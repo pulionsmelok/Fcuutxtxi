@@ -14,7 +14,7 @@ module.exports = {
   },
 
   onStart: async ({ event, bot, message, args }) => {
-    const chatId = event?.chat?.id;
+    const chatId = event.threadID || event?.chat?.id || event?.message?.chat?.id || event?.raw?.chat?.id || message?.threadID || event?.from?.id;
 
     if (!chatId) return;
 
