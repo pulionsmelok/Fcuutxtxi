@@ -1,0 +1,94 @@
+{
+  "antiInbox": false,
+  "language": "en",
+  "notesLanguage": "change to your language with ISO 639-1 code, available languages: vi (Vietnamese), en (English)",
+  "nickNameBot": "obito-bot",
+  "prefix": "/",
+  "adminOnly": {
+    "enable": false,
+    "ignoreCommand": []
+  },
+  "adminBot": [
+    "6734899387",
+    ""
+  ],
+  "developers": [],
+  "premium": [],
+  "whiteListMode": {
+    "enable": false,
+    "whiteListIds": [],
+    "notes": "if you enable this feature, only the ids in the whiteListIds list can use the bot"
+  },
+  "whiteListModeThread": {
+    "enable": false,
+    "whiteListThreadIds": [],
+    "notes": "if you enable this feature, only the thread in the whiteListThreadIds list can use the bot",
+    "how_it_work": "if you enable both whiteListMode and whiteListModeThread, the system will check if the user is in whiteListIds, then check if the thread is in whiteListThreadIds, if one of the conditions is true, the user can use the bot"
+  },
+  "database": {
+    "type": "sqlite",
+    "uriMongodb": "your_mongodb-uri",
+    "autoSyncWhenStart": false,
+    "autoRefreshThreadInfoFirstTime": true,
+    "notes": "(1) type selects 'json' or 'sqlite' or 'mongodb'. If you choose mongodb, enter uri connect mongodb in the uriMongodb section, instructions to get uri connect mongodb at: https://youtu.be/z1f9urHW5xY. I recommend using 'mongodb' or 'sqlite', json is not recommended because it is not stable. (2) when you set autoSyncWhenStart to true, the bot will automatically synchronize the data in the database when starting the bot, this will make the bot start slower. (3) when you set autoRefreshThreadInfoFirstTime to true, the bot will automatically refresh the thread information when get first message from the thread since starting the bot"
+  },
+  "timeZone": "Asia/Dhaka",
+  "dashBoard": {
+    "enable": true,
+    "expireVerifyCode": 300000,
+    "port": 3001
+  },
+  "autoRestart": {
+    "time": false,
+    "notes": "you can set time is interval with milisecond or cron time, example: 1000, 10000, 60000, 3600000, 86400000, 0 0 * * *,... docs: https://www.npmjs.com/package/node-cron. If you set time is 0 or false or null, the bot will not auto restart"
+  },
+  "autoUptime": {
+    "enable": true,
+    "timeInterval": 180,
+    "url": "https://uptimerobot.com/",
+    "notes": "the value of timeInterval is seconds, url is the url you want to send the request to (automatically detected for hosting glitch or replit)"
+  },
+  "autoLoadScripts": {
+    "enable": true,
+    "ignoreCmds": "",
+    "ignoreEvents": "",
+    "notes": "this feature will automatically load the script when scripts have been changed, you can set ignoreCmds to ignore commands, ignoreEvents to ignore events, separate by comma or space, example: \"cmd1.js cmd2.js cmd3.js\" (without backslash)"
+  },
+  "hideNotiMessage": {
+    "commandNotFound": false,
+    "adminOnly": false,
+    "threadBanned": false,
+    "userBanned": false,
+    "selflisten": true,
+    "whiteListMode": false,
+    "whiteListModeThread": false,
+    "needRoleToUseCmd": false
+  },
+  "logEvents": {
+    "disableAll": false,
+    "message": true,
+    "message_reaction": true,
+    "message_unsend": true,
+    "message_reply": true,
+    "event": true,
+    "read_receipt": true,
+    "typ": false,
+    "presence": false
+  },
+  "telegramAccount": {
+    "notes": "Telegram Bot API account. Put the BotFather token in account.txt.",
+    "tokenFile": "account.txt"
+  },
+  "telegram": {
+    "pollingTimeout": 25,
+    "restartDelay": 2000,
+    "parseMode": "HTML",
+    "allowBotMessages": false
+  },
+  "restartTelegramPolling": {
+    "enable": true,
+    "timeRestart": 3600000,
+    "delayAfterStopListening": 2000,
+    "logNoti": true
+  }
+}
