@@ -23,6 +23,19 @@ const {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const currentVersion = require(`${process.cwd()}/package.json`).version;
+
+function compareVersion(version1, version2) {
+	const v1 = String(version1).split(".").map(Number);
+	const v2 = String(version2).split(".").map(Number);
+	const length = Math.max(v1.length, v2.length);
+	for (let i = 0; i < length; i++) {
+		const a = v1[i] || 0;
+		const b = v2[i] || 0;
+		if (a > b) return 1;
+		if (a < b) return -1;
+	}
+	return 0;
+}
 const config = global.GoatBot.config;
 const dirAccount = global.client.dirAccount;
 
