@@ -26,6 +26,8 @@ module.exports = {
         category: "fun"
     },
 
+    onStart: ({}) => {},
+ 
     onChat: async function({ event, api, chatId }) {
         const text = String(event?.body || event?.text || event?.raw?.text || "").trim();
         if (!text) return;
