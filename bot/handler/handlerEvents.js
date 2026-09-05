@@ -77,6 +77,13 @@ function getRoleConfig(utils, command, isGroup, threadData, commandName) {
 function isBannedOrOnlyAdmin(userData, threadData, senderID, threadID, isGroup, commandName, message, lang) {
 	const config = global.GoatBot.config;
 	const { adminBot, hideNotiMessage } = config;
+	const panel = config.settingPanel || {};
+	const adminIds = (adminBot || []).map(String);
+	const isBotAdmin = adminIds.includes(String(senderID));
+	if (panel.maintenance === true && !isBotAdmin) {
+		message.reply("🚧 Bot is currently under maintenance. Please try again later.");
+		return true;
+	}
 
 	
 	const infoBannedUser = userData.banned;
@@ -187,6 +194,32 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 			return;
 
 		const senderID = event.userID || event.senderID || event.author;
+		const panelSettings = config.settingPanel || {};
+		const botAdminsForPanel = (config.adminBot || []).map(String);
+		const panelIsAdmin = botAdminsForPanel.includes(String(senderID));
+
+		// V71-style security settings made functional for Telegram messages.
+		if (!panelIsAdmin && typeof body === "string") {
+			if (panelSettings.antilink === true && /(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/)/i.test(body)) {
+				try { await api.deleteMessage?.(threadID, messageID); } catch (_) {}
+				try { await message.reply("🔗 Anti Link is ON. Links are not allowed."); } catch (_) {}
+				return;
+			}
+			if (panelSettings.spammute === true || panelSettings.spamMuteGlobal === true) {
+				global.temp.settingSpam = global.temp.settingSpam || new Map();
+				const now = Date.now();
+				const key = `${threadID}:${senderID}`;
+				const spamKey = panelSettings.spamMuteGlobal === true ? `global:${senderID}` : key;
+				const history = (global.temp.settingSpam.get(spamKey) || []).filter(t => now - t < 5000);
+				history.push(now);
+				global.temp.settingSpam.set(spamKey, history);
+				if (history.length > 5) {
+					try { await api.deleteMessage?.(threadID, messageID); } catch (_) {}
+					try { await message.reply("🚫 Spam protection is ON. Please slow down."); } catch (_) {}
+					return;
+				}
+			}
+		}
 
 		let threadData = global.db.allThreadData.find(t => t.threadID == threadID);
 		let userData = global.db.allUserData.find(u => u.userID == senderID);
@@ -332,6 +365,8 @@ module.exports = function (api, threadModel, userModel, dashBoardModel, globalMo
 				client.countDown[commandName] = {};
 			const timestamps = client.countDown[commandName];
 			let getCoolDown = command.config.countDown;
+			// Setting panel global cooldown: enforce a minimum 3-second cooldown for all commands.
+			if (GoatBot.config.settingPanel?.cooldown === true) getCoolDown = Math.max(Number(getCoolDown) || 0, 3);
 			if (!getCoolDown && getCoolDown != 0 || isNaN(getCoolDown))
 				getCoolDown = 1;
 			const cooldownCommand = getCoolDown * 1000;
