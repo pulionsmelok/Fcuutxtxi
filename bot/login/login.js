@@ -354,6 +354,16 @@ class TelegramApi {
       chat_id: chatId,
       disable_web_page_preview: false,
     };
+
+    // Forward HTML/other Telegram parse_mode from GoatBot-compatible
+    // message form or callback/options object.
+    if (form && typeof form === "object" && form.parse_mode) {
+      base.parse_mode = form.parse_mode;
+    }
+    if (callback && typeof callback === "object" && !Array.isArray(callback) && callback.parse_mode) {
+      base.parse_mode = callback.parse_mode;
+    }
+
     // Preserve Telegram reply_markup passed inside the message form.
     // message.reply({ body, reply_markup }) is the normal command API shape.
     if (form && typeof form === "object") {
