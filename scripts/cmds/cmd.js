@@ -528,7 +528,7 @@ function loadScripts(folder, fileName, log, configCommands, api, threadModel, us
 			allOnChat.splice(indexOnChat, 1);
 
 		
-		const indexOnFirstChat = allOnChat.findIndex(item => item == oldCommandName);
+		const indexOnFirstChat = allOnFirstChat.findIndex(item => item.commandName == oldCommandName);
 		let oldOnFirstChat;
 		if (indexOnFirstChat != -1) {
 			oldOnFirstChat = allOnFirstChat[indexOnFirstChat];
@@ -550,10 +550,24 @@ function loadScripts(folder, fileName, log, configCommands, api, threadModel, us
 			command.onLoad({ api, threadModel, userModel, dashBoardModel, globalModel, threadsData, usersData, dashBoardData, globalData });
 
 		const { envGlobal, envConfig } = configCommand;
-		if (!command.onStart)
-			throw new Error('Function onStart is missing!');
-		if (typeof command.onStart != "function")
-			throw new Error('Function onStart must be a function!');
+
+		// onStart is optional. Commands may use onChat, onReply, onReaction,
+		// onEvent, onAnyEvent, onFirstChat, etc. Validate only handlers that exist.
+		const handlerNames = [
+			"onStart",
+			"onChat",
+			"onReply",
+			"onReaction",
+			"onEvent",
+			"onAnyEvent",
+			"onFirstChat",
+			"onLoad"
+		];
+		for (const handlerName of handlerNames) {
+			if (command[handlerName] !== undefined && typeof command[handlerName] !== "function")
+				throw new Error(`Function ${handlerName} must be a function!`);
+		}
+
 		if (!scriptName)
 			throw new Error('Name of command is missing!');
 		
