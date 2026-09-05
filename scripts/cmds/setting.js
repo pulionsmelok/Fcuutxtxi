@@ -39,13 +39,10 @@ async function sendNew(message,text,keyboard){return message.reply({body:text,..
 async function editPanel(ctx,text,keyboard){
   const opts=markup(keyboard);
   try {
-
     return await ctx.editMessageText(text, opts);
   } catch (e) {
     const msg=String(e?.description||e?.message||e||"").toLowerCase();
-
     if (msg.includes("message is not modified")) return null;
-
     console.error("SETTING PANEL EDIT ERROR:", e?.message||e);
     return null;
   }

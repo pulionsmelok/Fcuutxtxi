@@ -35,7 +35,7 @@ module.exports = {
   config: {
     name: "restart",
     version: "1.2-TELEGRAM",
-    author: "NTKhang + SK-SIDDIK-KHAN",
+    author: "SK-SIDDIK-KHAN",
     countDown: 5,
     role: 2,
     description: { vi: "Khởi động lại bot", en: "Restart bot" },
@@ -51,6 +51,7 @@ module.exports = {
   onLoad: async function ({ api }) {
     const info = readRestartInfo();
     if (!info) return;
+
     await deleteRestartMessage(api, info);
 
     const elapsed = Math.max(0, (Date.now() - Number(info.time || Date.now())) / 1000).toFixed(2);
@@ -75,6 +76,7 @@ module.exports = {
       time: Date.now(),
       messageID: messageID ? String(messageID) : null
     });
+
     setTimeout(() => process.exit(2), 300);
   }
 };
