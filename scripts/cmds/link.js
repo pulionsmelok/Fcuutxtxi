@@ -1,7 +1,7 @@
 module.exports = {
   config: {
-    name: "linktg",
-    aliases: [],
+    name: "tglink",
+    aliases: ["linktg"],
     version: "2.0.8",
     author: "SK-SIDDIK-KHAN",
     countDown: 5,
