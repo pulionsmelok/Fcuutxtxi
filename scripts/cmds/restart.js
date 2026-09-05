@@ -51,8 +51,6 @@ module.exports = {
   onLoad: async function ({ api }) {
     const info = readRestartInfo();
     if (!info) return;
-
-    // Remove the temporary “Restarting bot...” message after the new process is online.
     await deleteRestartMessage(api, info);
 
     const elapsed = Math.max(0, (Date.now() - Number(info.time || Date.now())) / 1000).toFixed(2);
@@ -77,8 +75,6 @@ module.exports = {
       time: Date.now(),
       messageID: messageID ? String(messageID) : null
     });
-
-    // Give Telegram a moment to deliver the temporary message before exit.
     setTimeout(() => process.exit(2), 300);
   }
 };

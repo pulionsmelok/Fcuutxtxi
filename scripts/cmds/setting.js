@@ -36,7 +36,20 @@ function isBotAdmin(id){return getAdminIds().includes(String(id));}
 function panel(title,lines=[]){return[`╭─❖─〔 ${title} 〕─❖─╮`,...lines.map(x=>`│ ${x}`),"╰─❖─〔 GoatBot 〕─❖─╯"].join("\n");}
 function markup(keyboard){return{reply_markup:{inline_keyboard:keyboard}};}
 async function sendNew(message,text,keyboard){return message.reply({body:text,...markup(keyboard)});}
-async function editPanel(ctx,text,keyboard){try{return await ctx.editMessageText(text,markup(keyboard));}catch{try{return await ctx.reply({body:text,...markup(keyboard)});}catch{}}}
+async function editPanel(ctx,text,keyboard){
+  const opts=markup(keyboard);
+  try {
+
+    return await ctx.editMessageText(text, opts);
+  } catch (e) {
+    const msg=String(e?.description||e?.message||e||"").toLowerCase();
+
+    if (msg.includes("message is not modified")) return null;
+
+    console.error("SETTING PANEL EDIT ERROR:", e?.message||e);
+    return null;
+  }
+}
 
 const LABELS={maintenance:"🚧 Maintenance",adminonly:"👑 Admin Only",prefixMode:"🧩 Prefix Mode",cooldown:"⏱️ Global Cooldown",antilink:"🔗 Anti Link",spammute:"🚫 Spam Mute",spamMuteGlobal:"🌍 Spam Mute Global",welcome:"👋 Welcome",leave:"👋 Leave Message"};
 const CATS={general:["maintenance","adminonly","prefixMode","cooldown"],security:["antilink","spammute","spamMuteGlobal"],message:["welcome","leave"]};
@@ -46,7 +59,19 @@ function getCommands(){const c=global.GoatBot?.commands;if(!c||typeof c.values!=
 async function buildRoles(page=0){const commands=getCommands(),perPage=8,totalPages=Math.max(1,Math.ceil(commands.length/perPage));page=Math.max(0,Math.min(Number(page)||0,totalPages-1));const list=commands.slice(page*perPage,page*perPage+perPage);const keyboard=list.map(cmd=>{const r=Number(cmd.config.role||0),icon=r>=2?"🔒":r===1?"🛡️":"🌐";return[{text:`${icon} /${safeName(cmd.config.name,25)} [${r}]`,callback_data:`setting_edit_${cmd.config.name}`}];});const nav=[];if(page>0)nav.push({text:"⬅️ Prev",callback_data:`setting_rolepage_${page-1}`});nav.push({text:`📄 ${page+1}/${totalPages}`,callback_data:"setting_noop"});if(page<totalPages-1)nav.push({text:"Next ➡️",callback_data:`setting_rolepage_${page+1}`});keyboard.push(nav,[{text:"⬅️ Back",callback_data:"setting_main"}]);return{text:panel("ROLE MANAGER",[`📋 Total Commands: ${commands.length}`,"Select a command to change its role"]),keyboard};}
 const showMain=async ctx=>{const p=await buildMain();return editPanel(ctx,p.text,p.keyboard)};const showCategory=async(ctx,t)=>{const p=await buildCategory(t);return editPanel(ctx,p.text,p.keyboard)};const showRoles=async(ctx,p)=>{const x=await buildRoles(p);return editPanel(ctx,x.text,x.keyboard)};
 
-module.exports={config:{name:"setting",aliases:["settings","panel","control","st","config"],version:"11.0-GOATBOT-V71-STYLE",author:"SK-SIDDIK-KHAN",countDown:2,role:2,description:{en:"V71 style settings panel for GoatBot"},category:"admin",guide:{en:"{pn}"}},
+module.exports = {
+  config: {
+    name: "setting",
+    aliases: ["settings", "panel", "control", "st", "config"],
+    author: "SK-SIDDIK-KHAN",
+    version: "6.4.2",
+    description: "Global AntiLink 5s + SpamMute Fixed",
+    category: "admin",
+    usePrefix: true,
+    role: 2,
+    cooldown: 2
+  },
+
 onStart:async function({args,message}){const key=String(args?.[0]||"").toLowerCase(),value=String(args?.[1]||"").toLowerCase();if(key&&["on","off"].includes(value)){if(!Object.prototype.hasOwnProperty.call(DEFAULTS,key))return message.reply(`❌ Unknown setting: ${key}`);const s=await loadSettings();s[key]=value==="on";await saveSettings(s);return message.reply(`✅ ${LABELS[key]||key} → ${value.toUpperCase()}\n💾 Saved successfully.`);}const p=await buildMain();return sendNew(message,p.text,p.keyboard);},
 onCallback:async function({event,ctx,userId}){const data=String(event?.data||event?.callbackData||"");const uid=event?.from?.id||event?.senderID||event?.userID||userId;try{await ctx.answerCbQuery();}catch{}if(!isBotAdmin(uid)){try{await ctx.answerCbQuery("❌ Only Bot Admin!",true);}catch{}return;}if(data==="setting_noop")return;if(data==="setting_main")return showMain(ctx);if(data==="setting_general")return showCategory(ctx,"general");if(data==="setting_security")return showCategory(ctx,"security");if(data==="setting_message")return showCategory(ctx,"message");if(data==="setting_roles")return showRoles(ctx,0);
 if(data==="setting_configreload"){try{global.GoatBot.config=fs.readJsonSync(global.client.dirConfig);global.GoatBot.configCommands=fs.readJsonSync(global.client.dirConfigCommands);try{await ctx.answerCbQuery("✅ Config reloaded");}catch{}return showMain(ctx);}catch(e){return ctx.reply(`❌ Config reload failed: ${e.message}`);}}
