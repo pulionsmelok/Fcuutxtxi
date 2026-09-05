@@ -11,6 +11,7 @@ module.exports = {
     author: "SK-SIDDIK-KHAN",
     role: 0,
     description: "Direct video download",
+    category: "media",
     usePrefix: true
   },
 
