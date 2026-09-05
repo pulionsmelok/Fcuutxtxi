@@ -1,13 +1,12 @@
-// set terminal title
 process.stdout.write("\x1b]2;Goat Bot V2 - Telegram\x1b\\");
-
+ 
 const fs = require("fs-extra");
 const path = require("path");
 const https = require("https");
 const { URL } = require("url");
 const axios = require("axios");
 const gradient = require("gradient-string");
-
+ 
 const { callbackListenTime, storage5Message } = global.GoatBot;
 const {
   log,
@@ -20,10 +19,10 @@ const {
   colors,
   randomString,
 } = global.utils;
-
+ 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const currentVersion = require(`${process.cwd()}/package.json`).version;
-
+ 
 function compareVersion(version1, version2) {
 	const v1 = String(version1).split(".").map(Number);
 	const v2 = String(version2).split(".").map(Number);
@@ -38,7 +37,7 @@ function compareVersion(version1, version2) {
 }
 const config = global.GoatBot.config;
 const dirAccount = global.client.dirAccount;
-
+ 
 function createLine(content, isMaxWidth = false) {
   let width = process.stdout.columns || 80;
   if (!isMaxWidth && width > 50) width = 50;
@@ -48,15 +47,15 @@ function createLine(content, isMaxWidth = false) {
   const left = Math.floor(lengthLine / 2);
   return `${"─".repeat(left)}${content}${"─".repeat(lengthLine - left)}`;
 }
-
-
+ 
+ 
 function centerText(text, length) {
   const width = process.stdout.columns || 80;
   const textLength = length || String(text).length;
   const leftPadding = Math.max(0, Math.floor((width - textLength) / 2));
   console.log(" ".repeat(leftPadding) + text);
 }
-
+ 
 function printStartupTitle() {
   const titles = [
     [
@@ -74,34 +73,34 @@ function printStartupTitle() {
     [`G O A T B O T  V 2 @${currentVersion}`],
     ["GOATBOT V2"]
   ];
-
+ 
   const maxWidth = process.stdout.columns || 80;
   const title = maxWidth > 58 ? titles[0] : maxWidth > 36 ? titles[1] : maxWidth > 26 ? titles[2] : titles[3];
-
+ 
   console.log(gradient("#f5af19", "#f12711")(createLine(null, true)));
   console.log();
   for (const text of title) {
     centerText(gradient("#FA8BFF", "#2BD2FF", "#2BFF88")(text), text.length);
   }
-
+ 
   const subTitle = `GoatBot V2@${currentVersion} - Telegram Bot`;
   const author = "Created by NTKhang with ♡";
   const srcUrl = "Source code: https://github.com/ntkhang03/Goat-Bot-V2";
   const telegramInfo = "Telegram version";
-
+ 
   centerText(gradient("#9F98E8", "#AFF6CF")(subTitle), subTitle.length);
   centerText(gradient("#9F98E8", "#AFF6CF")(author), author.length);
   centerText(gradient("#9F98E8", "#AFF6CF")(srcUrl), srcUrl.length);
   centerText(gradient("#f5af19", "#f12711")(telegramInfo), telegramInfo.length);
 }
-
+ 
 printStartupTitle();
-
+ 
 function readTokenFile() {
   if (!fs.existsSync(dirAccount)) fs.writeFileSync(dirAccount, "");
   const raw = fs.readFileSync(dirAccount, "utf8").trim();
   if (!raw) return "";
-
+ 
   
   
   
@@ -112,19 +111,19 @@ function readTokenFile() {
       return String(obj.token || obj.botToken || "").trim();
     }
   } catch (_) {  }
-
+ 
   const tokenLine = raw.split(/\r?\n/).find((line) => {
     const value = line.replace(/^BOT_TOKEN\s*=\s*/i, "").trim();
     return /^\d{6,12}:[A-Za-z0-9_-]{20,}$/.test(value);
   });
   return tokenLine ? tokenLine.replace(/^BOT_TOKEN\s*=\s*/i, "").trim() : raw.split(/\r?\n/)[0].trim();
 }
-
+ 
 function writeTokenIfNeeded(token) {
   const raw = fs.existsSync(dirAccount) ? fs.readFileSync(dirAccount, "utf8") : "";
   if (!raw.trim() && token) fs.writeFileSync(dirAccount, token);
 }
-
+ 
 function requestRaw(url, options = {}, body = null) {
   return new Promise((resolve, reject) => {
     const target = new URL(url);
@@ -150,33 +149,33 @@ function requestRaw(url, options = {}, body = null) {
     req.end();
   });
 }
-
+ 
 function encodeForm(data) {
   return Object.entries(data)
     .filter(([, value]) => value !== undefined && value !== null)
     .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(typeof value === "object" ? JSON.stringify(value) : String(value))}`)
     .join("&");
 }
-
+ 
 async function multipartRequest(url, fields, file) {
   const boundary = `----GoatBotBoundary${randomString(18)}`;
   const chunks = [];
   const push = (value) => chunks.push(Buffer.isBuffer(value) ? value : Buffer.from(value));
-
+ 
   for (const [name, value] of Object.entries(fields)) {
     if (value === undefined || value === null) continue;
     push(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n`);
     push(typeof value === "object" ? JSON.stringify(value) : String(value));
     push("\r\n");
   }
-
+ 
   if (file) {
     push(`--${boundary}\r\nContent-Disposition: form-data; name="${file.field}"; filename="${file.filename || "file.bin"}"\r\nContent-Type: ${file.contentType || "application/octet-stream"}\r\n\r\n`);
     push(file.buffer);
     push("\r\n");
   }
   push(`--${boundary}--\r\n`);
-
+ 
   const result = await requestRaw(url, {
     method: "POST",
     headers: {
@@ -190,7 +189,7 @@ async function multipartRequest(url, fields, file) {
   if (!json.ok) throw new Error(json.description || "Telegram API error");
   return json.result;
 }
-
+ 
 async function collectBuffer(value) {
   if (Buffer.isBuffer(value)) return value;
   if (typeof value === "string") {
@@ -206,18 +205,18 @@ async function collectBuffer(value) {
   if (value && typeof value.path === "string" && fs.existsSync(value.path)) return fs.readFileSync(value.path);
   return null;
 }
-
+ 
 function filenameFor(value, fallback = "file.bin") {
   if (typeof value === "string") return path.basename(value.split("?")[0]) || fallback;
   if (value && value.path) return path.basename(value.path) || fallback;
   return fallback;
 }
-
+ 
 function extOf(name) {
   const ext = path.extname(name || "").toLowerCase();
   return ext || ".bin";
 }
-
+ 
 function attachmentType(value, name) {
   const ext = extOf(name);
   if ([".jpg", ".jpeg", ".png", ".webp"].includes(ext)) return "photo";
@@ -226,22 +225,22 @@ function attachmentType(value, name) {
   if ([".mp3", ".m4a", ".wav", ".ogg", ".oga"].includes(ext)) return "audio";
   return "file";
 }
-
+ 
 function normalizeId(value) {
   return value === undefined || value === null ? "" : String(value);
 }
-
+ 
 function normalizeInlineKeyboard(buttons) {
   if (!buttons) return null;
   let rows = Array.isArray(buttons) ? buttons : [buttons];
   if (rows.length && !Array.isArray(rows[0])) rows = [rows];
-
+ 
   return rows.map(row => row.map(button => {
     if (typeof button === "string") {
       return { text: button, callback_data: button };
     }
     if (!button || typeof button !== "object") return null;
-
+ 
     const out = { text: String(button.text || button.label || "Button") };
     if (button.url) out.url = String(button.url);
     else if (button.web_app) out.web_app = button.web_app;
@@ -251,7 +250,7 @@ function normalizeInlineKeyboard(buttons) {
     return out;
   }).filter(Boolean)).filter(row => row.length);
 }
-
+ 
 function makeAttachment(fileId, type, name, botApi) {
   const attachment = {
     type,
@@ -270,7 +269,7 @@ function makeAttachment(fileId, type, name, botApi) {
   };
   return attachment;
 }
-
+ 
 class TelegramApi {
   constructor(token) {
     this.token = token;
@@ -285,7 +284,7 @@ class TelegramApi {
     this.messageCache = new Map();
     this.options = {};
   }
-
+ 
   async call(method, params = {}) {
     const body = encodeForm(params);
     const result = await requestRaw(`${this.base}/${method}`, {
@@ -302,12 +301,12 @@ class TelegramApi {
     }
     return json.result;
   }
-
+ 
   async fileUrl(fileId) {
     const file = await this.call("getFile", { file_id: fileId });
     return `${this.fileBase}/${file.file_path}`;
   }
-
+ 
   async getMe() { return this.botInfo || (this.botInfo = await this.call("getMe")); }
   getCurrentUserID() { return normalizeId(this.botInfo?.id); }
   async getFile(fileId) { return this.call("getFile", { file_id: String(fileId) }); }
@@ -331,12 +330,12 @@ class TelegramApi {
   async banChatMember(chatId, userId, options = {}) { return this.call("banChatMember", { chat_id: normalizeId(chatId), user_id: Number(userId), ...options }); }
   async unbanChatMember(chatId, userId, options = {}) { return this.call("unbanChatMember", { chat_id: normalizeId(chatId), user_id: Number(userId), ...options }); }
   async restrictChatMember(chatId, userId, permissions, options = {}) { return this.call("restrictChatMember", { chat_id: normalizeId(chatId), user_id: Number(userId), permissions: typeof permissions === "object" ? JSON.stringify(permissions) : permissions, ...options }); }
-
+ 
   setOptions(options = {}) {
     this.options = { ...this.options, ...options };
     return this.options;
   }
-
+ 
   async sendMessage(form, threadID, callback, replyToMessageID) {
     // Messenger GoatBot compatibility standard:
     // api.sendMessage(message, event.threadID, callback?, replyToMessageID?)
@@ -347,36 +346,32 @@ class TelegramApi {
       throw error;
     }
     let body = typeof form === "string" ? form : String(form?.body || "");
-    const replyId = replyToMessageID || (typeof callback === "number" ? callback : undefined);
-    if (typeof callback === "number") callback = undefined;
-
+    const replyId = replyToMessageID ||
+  (typeof callback === "number" ? callback : undefined) ||
+  (callback && typeof callback === "object" ? callback.reply_to_message_id : undefined);
+ 
     const base = {
       chat_id: chatId,
       disable_web_page_preview: false,
     };
-
-    // Forward HTML/other Telegram parse_mode from GoatBot-compatible
-    // message form or callback/options object.
+ 
     if (form && typeof form === "object" && form.parse_mode) {
       base.parse_mode = form.parse_mode;
     }
     if (callback && typeof callback === "object" && !Array.isArray(callback) && callback.parse_mode) {
       base.parse_mode = callback.parse_mode;
     }
-
-    // Preserve Telegram reply_markup passed inside the message form.
-    // message.reply({ body, reply_markup }) is the normal command API shape.
+ 
     if (form && typeof form === "object") {
       if (form.reply_markup) base.reply_markup = form.reply_markup;
       else if (form.inline_keyboard) base.reply_markup = { inline_keyboard: form.inline_keyboard };
     }
-
-    // Also support reply_markup/inline_keyboard passed as the callback/options argument.
+ 
     if (callback && typeof callback === "object" && !Array.isArray(callback)) {
       if (callback.reply_markup) base.reply_markup = callback.reply_markup;
       else if (callback.inline_keyboard) base.reply_markup = { inline_keyboard: callback.inline_keyboard };
     }
-
+ 
     const inlineButtons = normalizeInlineKeyboard(
       form && typeof form === "object" ? (form.buttons || form.inlineKeyboard || form.keyboard) : null
     );
@@ -399,11 +394,11 @@ class TelegramApi {
       }
       if (entities.length) base.entities = entities;
     }
-
+ 
     let result;
     const attachment = form && typeof form === "object" ? form.attachment : null;
     const attachments = attachment ? (Array.isArray(attachment) ? attachment : [attachment]) : [];
-
+ 
     if (!attachments.length) {
       result = await this.call("sendMessage", { ...base, text: body || "\u200b" });
     } else {
@@ -420,7 +415,7 @@ class TelegramApi {
         } else if (typeof value === "string" && !/^https?:\/\//i.test(value) && fs.existsSync(value)) {
           file = { field: "media", buffer: fs.readFileSync(value), filename: name };
         }
-
+ 
         const type = item?.type || attachmentType(value, name);
         const method = type === "photo" || type === "png" ? "sendPhoto" : type === "video" ? "sendVideo" : type === "audio" ? "sendAudio" : "sendDocument";
         const field = method === "sendPhoto" ? "photo" : method === "sendVideo" ? "video" : method === "sendAudio" ? "audio" : "document";
@@ -436,13 +431,13 @@ class TelegramApi {
         }
       }
     }
-
+ 
     const info = { ...result, messageID: normalizeId(result.message_id), threadID: chatId };
     this.messageCache.set(`${chatId}:${info.messageID}`, info);
     if (typeof callback === "function") callback(null, info);
     return info;
   }
-
+ 
   async sendPhoto(chatId, photo, options = {}) {
     const fields = { chat_id: normalizeId(chatId), ...options };
     delete fields.reply_to_message_id;
@@ -453,7 +448,7 @@ class TelegramApi {
     fields.photo = typeof value === "string" ? value : String(value || "");
     return this.call("sendPhoto", fields);
   }
-
+ 
   async sendVideo(chatId, video, options = {}) {
     const fields = { chat_id: normalizeId(chatId), ...options };
     delete fields.reply_to_message_id;
@@ -464,7 +459,7 @@ class TelegramApi {
     fields.video = typeof value === "string" ? value : String(value || "");
     return this.call("sendVideo", fields);
   }
-
+ 
   async sendAudio(chatId, audio, options = {}) {
     const fields = { chat_id: normalizeId(chatId), ...options };
     delete fields.reply_to_message_id;
@@ -475,7 +470,7 @@ class TelegramApi {
     fields.audio = typeof value === "string" ? value : String(value || "");
     return this.call("sendAudio", fields);
   }
-
+ 
   async sendDocument(chatId, document, options = {}) {
     const fields = { chat_id: normalizeId(chatId), ...options };
     delete fields.reply_to_message_id;
@@ -486,7 +481,7 @@ class TelegramApi {
     fields.document = typeof value === "string" ? value : String(value || "");
     return this.call("sendDocument", fields);
   }
-
+ 
   async _prepareMedia(value, field, filename) {
     if (value && typeof value === "object" && !Buffer.isBuffer(value) && value.file_id) return null;
     if (typeof value === "string" && /^https?:\/\//i.test(value)) return { field, buffer: await collectBuffer(value), filename };
@@ -497,18 +492,18 @@ class TelegramApi {
     if (value && typeof value.path === "string" && fs.existsSync(value.path)) return { field, buffer: fs.readFileSync(value.path), filename: path.basename(value.path) || filename };
     return null;
   }
-
+ 
   async _sendMediaMultipart(method, fields, file) {
     const result = await multipartRequest(`${this.base}/${method}`, fields, file);
     const info = { ...result, messageID: normalizeId(result.message_id), threadID: normalizeId(fields.chat_id) };
     this.messageCache.set(`${info.threadID}:${info.messageID}`, info);
     return info;
   }
-
+ 
   async deleteMessage(chatId, messageId) {
     return this.call("deleteMessage", { chat_id: normalizeId(chatId), message_id: Number(messageId) });
   }
-
+ 
   async editMessageText(a, b, c, d, e) {
     if (typeof a === "object" && a !== null) return this.call("editMessageText", a);
     if (typeof b === "object" && b !== null && !c) {
@@ -524,7 +519,7 @@ class TelegramApi {
     const options = (e && typeof e === "object") ? e : ((d && typeof d === "object") ? d : {});
     return this.call("editMessageText", { chat_id: chatId, message_id: messageId, text, ...options });
   }
-
+ 
   async editMessageCaption(a, b, c, d, e) {
     if (typeof a === "object" && a !== null) return this.call("editMessageCaption", a);
     if (b && typeof b === "object" && !c) {
@@ -537,34 +532,34 @@ class TelegramApi {
     const options = (e && typeof e === "object") ? e : ((d && typeof d === "object") ? d : {});
     return this.call("editMessageCaption", { chat_id: chatId, message_id: messageId, caption, ...options });
   }
-
+ 
   async editMessage(text, messageID, chatID) {
     let chatId = normalizeId(chatID);
-
+ 
     if (!chatId) {
       const found = [...this.messageCache.entries()].find(
         ([, m]) => normalizeId(m.messageID || m.message_id) === normalizeId(messageID)
       );
       if (found) chatId = found[0].split(":")[0];
     }
-
+ 
     if (!chatId) throw new Error("Cannot determine chat ID for editMessage");
-
+ 
     const result = await this.call("editMessageText", {
       chat_id: chatId,
       message_id: Number(messageID),
       text: String(text || ""),
       disable_web_page_preview: false
     });
-
+ 
     const info = result && result.message_id
       ? { ...result, messageID: normalizeId(result.message_id), threadID: chatId }
       : { messageID: normalizeId(messageID), threadID: chatId };
-
+ 
     this.messageCache.set(`${chatId}:${info.messageID}`, info);
     return info;
   }
-
+ 
   async answerCallbackQuery(callbackQueryID, text = "", showAlert = false) {
     if (!callbackQueryID) return false;
     if (text && typeof text === "object") {
@@ -580,7 +575,7 @@ class TelegramApi {
       show_alert: !!showAlert
     });
   }
-
+ 
   async sendButton(text, buttons, threadID, replyToMessageID, callback) {
     return this.sendMessage(
       { body: text, buttons },
@@ -589,7 +584,7 @@ class TelegramApi {
       replyToMessageID
     );
   }
-
+ 
   async unsendMessage(messageID, callback) {
     const found = [...this.messageCache.entries()].find(([, m]) => normalizeId(m.messageID || m.message_id) === normalizeId(messageID));
     if (!found) return false;
@@ -605,7 +600,7 @@ class TelegramApi {
       return false;
     }
   }
-
+ 
   async setMessageReaction(emoji, messageID, callback) {
     const found = [...this.messageCache.entries()].find(([, m]) => normalizeId(m.messageID || m.message_id) === normalizeId(messageID));
     if (!found) return false;
@@ -625,7 +620,7 @@ class TelegramApi {
       return false;
     }
   }
-
+ 
   async getUserInfo(userID) {
     const id = Number(userID);
     if (!Number.isFinite(id)) return { [normalizeId(userID)]: { id: normalizeId(userID), name: "Unknown user", gender: null, vanity: null } };
@@ -638,7 +633,7 @@ class TelegramApi {
       return { [normalizeId(id)]: { id: normalizeId(id), name: `User ${id}`, gender: null, vanity: null } };
     }
   }
-
+ 
   async getAvatarUrl(userID) {
     try {
       const photos = await this.call("getUserProfilePhotos", { user_id: Number(userID), limit: 1 });
@@ -649,7 +644,7 @@ class TelegramApi {
       return null;
     }
   }
-
+ 
   async getThreadInfo(threadID) {
     const chatId = normalizeId(threadID);
     const chat = await this.call("getChat", { chat_id: chatId });
@@ -657,7 +652,7 @@ class TelegramApi {
     let admins = [];
     let userInfo = [];
     let participantIDs = [];
-
+ 
     if (isGroup) {
       try {
         const adminMembers = await this.call("getChatAdministrators", { chat_id: chatId });
@@ -673,7 +668,7 @@ class TelegramApi {
       userInfo = [{ id: normalizeId(u.id), name: [u.first_name, u.last_name].filter(Boolean).join(" ") || u.username || u.title || `User ${u.id}`, gender: null, vanity: u.username || null }];
       participantIDs = [normalizeId(u.id)];
     }
-
+ 
     const adminIDs = admins.map((u) => normalizeId(u.id));
     const known = this.chatMembers.get(chatId) || new Map();
     for (const u of userInfo) known.set(normalizeId(u.id), u);
@@ -696,11 +691,11 @@ class TelegramApi {
     this.chatCache.set(chatId, info);
     return info;
   }
-
+ 
   async getThreadList() {
     return [...this.chatCache.values()];
   }
-
+ 
   async changeNickname(nickname, threadID, userID) {
     
     if (normalizeId(userID) === this.getCurrentUserID()) {
@@ -708,13 +703,13 @@ class TelegramApi {
     }
     return false;
   }
-
+ 
   async setTitle(threadID, title) { return this.call("setChatTitle", { chat_id: threadID, title }); }
   async changeThreadEmoji() { return false; }
   async changeThreadColor() { return false; }
   async changeGroupImage() { return false; }
   async changeAvatar() { return false; }
-
+ 
   async removeUserFromGroup(userID, threadID, callback) {
     try {
       const result = normalizeId(userID) === this.getCurrentUserID()
@@ -727,7 +722,7 @@ class TelegramApi {
       throw err;
     }
   }
-
+ 
   async addUserToGroup(userID, threadID, callback) {
     try {
       const result = await this.call("unbanChatMember", { chat_id: threadID, user_id: Number(userID), only_if_banned: true });
@@ -738,17 +733,17 @@ class TelegramApi {
       throw err;
     }
   }
-
+ 
   async refreshFb_dtsg() { return true; }
   async resolvePhotoUrl(url) { return url; }
   async rf() { return true; }
   getAppState() { return [{ key: "telegram_bot_token", value: this.token }]; }
   async httpPost(url, form) { return axios.post(url, form); }
-
+ 
   async buildAttachment(fileId, type, name) {
     return makeAttachment(fileId, type, name, this);
   }
-
+ 
   async eventFromUpdate(update) {
     if (update.message || update.edited_message || update.channel_post) {
       const msg = update.message || update.edited_message || update.channel_post;
@@ -760,7 +755,7 @@ class TelegramApi {
     if (update.chat_join_request) return this.eventFromMemberUpdate(update.chat_join_request);
     return null;
   }
-
+ 
   async eventFromMessage(msg) {
     const chat = msg.chat || {};
     const from = msg.from || msg.sender_chat || {};
@@ -790,14 +785,14 @@ class TelegramApi {
       reply_to_message: msg.reply_to_message,
       entities,
     };
-
+ 
     for (const entity of entities) {
       if (entity.type === "text_mention" && entity.user) {
         const name = body.slice(entity.offset, entity.offset + entity.length);
         event.mentions[normalizeId(entity.user.id)] = name;
       }
     }
-
+ 
     if (msg.reply_to_message) {
       const reply = msg.reply_to_message;
       const replyFrom = reply.from || reply.sender_chat || {};
@@ -811,7 +806,7 @@ class TelegramApi {
       };
     }
     event.attachments = await this.attachmentsFromMessage(msg);
-
+ 
     const known = this.chatMembers.get(event.threadID) || new Map();
     if (from.id) known.set(normalizeId(from.id), { id: normalizeId(from.id), name: [from.first_name, from.last_name].filter(Boolean).join(" ") || from.username || `User ${from.id}`, gender: null, vanity: from.username || null });
     this.chatMembers.set(event.threadID, known);
@@ -819,7 +814,7 @@ class TelegramApi {
     this.chatCache.set(event.threadID, { ...(this.chatCache.get(event.threadID) || {}), threadID: event.threadID, threadName: chat.title || chat.first_name || chat.username || event.threadID, isGroup: event.isGroup });
     return event;
   }
-
+ 
   async attachmentsFromMessage(msg) {
     const result = [];
     if (msg.photo?.length) {
@@ -846,14 +841,14 @@ class TelegramApi {
     if (msg.animation) { const a = await this.buildAttachment(msg.animation.file_id, "animated_image", msg.animation.file_name || `animation-${msg.animation.file_unique_id}.gif`); a.url = await this.fileUrl(msg.animation.file_id); result.push(a); }
     return result;
   }
-
+ 
   async eventFromCallbackQuery(query) {
     const msg = query.message || query.inline_message || {};
     const chat = msg.chat || {};
     const from = query.from || {};
     const threadID = normalizeId(chat.id || query.chat_instance);
     const messageID = normalizeId(msg.message_id || query.inline_message_id || Date.now());
-
+ 
     return {
       type: "callback_query",
       body: "",
@@ -880,7 +875,7 @@ class TelegramApi {
       raw: query,
     };
   }
-
+ 
   async eventFromReaction(reaction) {
     const actor = reaction.user || reaction.actor_chat || {};
     const chatId = normalizeId(reaction.chat?.id);
@@ -904,7 +899,7 @@ class TelegramApi {
       raw: reaction,
     };
   }
-
+ 
   async eventFromMemberUpdate(memberUpdate) {
     const chat = memberUpdate.chat || {};
     const newMember = memberUpdate.new_chat_member;
@@ -914,7 +909,7 @@ class TelegramApi {
     const isGroup = ["group", "supergroup"].includes(chat.type);
     let logMessageType = null;
     let logMessageData = {};
-
+ 
     if (newMember) {
       const oldStatus = oldMember?.status;
       const newStatus = newMember.status;
@@ -926,7 +921,7 @@ class TelegramApi {
         logMessageData.leftParticipantFbId = normalizeId(user.id);
       }
     }
-
+ 
     if (!logMessageType) return null;
     return {
       type: "event",
@@ -945,7 +940,7 @@ class TelegramApi {
       raw: memberUpdate,
     };
   }
-
+ 
   async poll(callback) {
     if (!this.running) return;
     try {
@@ -969,7 +964,7 @@ class TelegramApi {
     }
     if (this.running) this.pollingHandle = setImmediate(() => this.poll(callback));
   }
-
+ 
   polling(callback) {
     this.running = true;
     this.pollingHandle = setImmediate(() => this.poll(callback));
@@ -978,7 +973,7 @@ class TelegramApi {
     };
   }
 }
-
+ 
 async function loadDataAndScripts(api) {
   const {
     threadModel,
@@ -991,7 +986,7 @@ async function loadDataAndScripts(api) {
     globalData,
     sequelize,
   } = await require("./loadData.js")(api, createLine);
-
+ 
   await require("../custom.js")({
     api,
     threadModel,
@@ -1004,7 +999,7 @@ async function loadDataAndScripts(api) {
     globalData,
     getText,
   });
-
+ 
   await require("./loadScripts.js")(
     api,
     threadModel,
@@ -1017,10 +1012,10 @@ async function loadDataAndScripts(api) {
     globalData,
     createLine
   );
-
+ 
   return { threadModel, userModel, dashBoardModel, globalModel, threadsData, usersData, dashBoardData, globalData, sequelize };
 }
-
+ 
 async function fetchGban() {
   const urls = [
     "https://raw.githubusercontent.com/xnil6x-obito/XGBAN/refs/heads/main/gban.json",
@@ -1030,14 +1025,14 @@ async function fetchGban() {
   }
   throw new Error("Can't get GBAN data");
 }
-
+ 
 function isBannedFromGban(dataGban, id) {
   const item = dataGban?.[normalizeId(id)];
   if (!item) return false;
   if (!item.toDate) return true;
   return Date.now() < new Date(item.toDate).getTime();
 }
-
+ 
 async function checkGban(api) {
   const dataGban = await fetchGban();
   const botID = api.getCurrentUserID();
@@ -1055,25 +1050,25 @@ async function checkGban(api) {
   }
   return dataGban;
 }
-
+ 
 function isWhitelisted(event) {
   const cfg = global.GoatBot.config;
   const sender = normalizeId(event.senderID);
   const thread = normalizeId(event.threadID);
   const admins = (cfg.adminBot || []).map(normalizeId);
   if (admins.includes(sender)) return true;
-
+ 
   const userMode = cfg.whiteListMode?.enable === true;
   const threadMode = cfg.whiteListModeThread?.enable === true;
   const userOK = (cfg.whiteListMode?.whiteListIds || []).map(normalizeId).includes(sender);
   const threadOK = (cfg.whiteListModeThread?.whiteListThreadIds || []).map(normalizeId).includes(thread);
-
+ 
   if (userMode && threadMode) return userOK || threadOK;
   if (userMode) return userOK;
   if (threadMode) return threadOK;
   return true;
 }
-
+ 
 async function stopListening(api) {
   if (api && api.stop) api.stop();
   if (global.GoatBot.Listening?.stopListening) global.GoatBot.Listening.stopListening();
@@ -1082,7 +1077,7 @@ async function stopListening(api) {
   const key = keys.pop();
   if (key) callbackListenTime[key] = () => {};
 }
-
+ 
 function createCallBackListen(api, deps, dataGban) {
   const key = randomString(10) + Date.now();
   const callback = async (error, event) => {
@@ -1094,18 +1089,18 @@ function createCallBackListen(api, deps, dataGban) {
         return log.err("LISTEN_TELEGRAM", getText("login", "callBackError"), error);
       }
       if (!event) return;
-
+ 
       global.responseUptimeCurrent = global.responseUptimeSuccess;
       global.statusAccountBot = "good";
-
+ 
       if (event.messageID && event.type === "message") {
         if (storage5Message.includes(event.messageID)) return;
         storage5Message.push(event.messageID);
         if (storage5Message.length > 5) storage5Message.shift();
       }
-
+ 
       if (!isWhitelisted(event)) return;
-
+ 
       const sender = normalizeId(event.senderID || event.userID);
       if (isBannedFromGban(dataGban, sender)) {
         if (event.body && event.threadID && event.body.startsWith(getPrefix(event.threadID))) {
@@ -1113,7 +1108,7 @@ function createCallBackListen(api, deps, dataGban) {
         }
         return;
       }
-
+ 
       if (event.type === "message" || event.type === "message_reply") {
         const handlerAction = require("../handler/handlerAction.js")(
           api,
@@ -1148,22 +1143,22 @@ function createCallBackListen(api, deps, dataGban) {
   callbackListenTime[key] = callback;
   return callback;
 }
-
+ 
 async function startBot() {
   console.log(colors.hex("#f5ab00")(createLine("START TELEGRAM LOGIN", true)));
-
+ 
   // Check official GoatBot V2 version.
   // If an update is available, hide NOTIFICATION. If already latest, show it.
   let updateAvailable = false;
   let latestVersion = null;
-
+ 
   // The official repository has used different default branches over time.
   // Try both branches so the update checker does not fail with a 404.
   const versionUrls = [
     "https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2/master/package.json",
     "https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2/main/package.json"
   ];
-
+ 
   for (const url of versionUrls) {
     try {
       const { data } = await axios.get(url, {
@@ -1173,7 +1168,7 @@ async function startBot() {
           "Accept": "application/json,text/plain,*/*"
         }
       });
-
+ 
       if (data?.version) {
         latestVersion = String(data.version).trim();
         break;
@@ -1183,7 +1178,7 @@ async function startBot() {
       // Try the next official branch URL.
     }
   }
-
+ 
   if (latestVersion) {
     if (compareVersion(currentVersion, latestVersion) >= 0) {
       log.info(
@@ -1203,7 +1198,7 @@ async function startBot() {
     // Keep the bot running if GitHub is temporarily unreachable.
     log.warn("UPDATE", "⚠️ | Update status could not be checked right now.");
   }
-
+ 
   let token = readTokenFile();
   if (!/^\d{6,12}:[A-Za-z0-9_-]{20,}$/.test(token)) {
     log.err("LOGIN TELEGRAM", "Invalid bot token in account.txt");
@@ -1211,7 +1206,7 @@ async function startBot() {
     return;
   }
   writeTokenIfNeeded(token);
-
+ 
   const api = new TelegramApi(token);
   await api.getMe();
   global.GoatBot.fcaApi = api; 
@@ -1220,7 +1215,7 @@ async function startBot() {
   global.botID = api.getCurrentUserID();
   global.GoatBot.Listening = null;
   global.statusAccountBot = "good";
-
+ 
   logColor("#f5ab00", createLine("BOT INFO"));
   log.info("NODE VERSION", process.version);
   log.info("PROJECT VERSION", currentVersion);
@@ -1228,7 +1223,7 @@ async function startBot() {
   log.info("PREFIX", global.GoatBot.config.prefix);
   log.info("LANGUAGE", global.GoatBot.config.language);
   log.info("BOT NICK NAME", global.GoatBot.config.nickNameBot || "GOAT BOT");
-
+ 
   let dataGban;
   try {
     dataGban = await checkGban(api);
@@ -1237,16 +1232,16 @@ async function startBot() {
     log.err("GBAN", getText("login", "checkGbanError"), err);
     return;
   }
-
+ 
   let notification = "";
   try {
     notification = (await axios.get("https://raw.githubusercontent.com/ntkhang03/Goat-Bot-V2-Gban/master/notification.txt", { timeout: 10000 })).data || "";
   } catch (_) {
     notification = "";
   }
-
+ 
   const deps = await loadDataAndScripts(api);
-
+ 
   
   
   if (global.GoatBot.config.autoLoadScripts?.enable === true) {
@@ -1284,7 +1279,7 @@ async function startBot() {
     reload("cmds");
     reload("events");
   }
-
+ 
   logColor("#f5ab00", createLine("ADMIN BOT"));
   let i = 0;
   for (const uid of global.GoatBot.config.adminBot || []) {
@@ -1299,12 +1294,12 @@ async function startBot() {
   if (!updateAvailable) {
     log.master("NOTIFICATION", String(notification).trim());
   }
-
+ 
   const callback = createCallBackListen(api, deps, dataGban);
   await stopListening(api);
   global.GoatBot.Listening = api.polling(callback);
   global.GoatBot.callBackListen = callback;
-
+ 
   
   const restartConfig = global.GoatBot.config.restartTelegramPolling || {};
   if (restartConfig.enable === true && Number(restartConfig.timeRestart) > 0) {
@@ -1327,9 +1322,10 @@ log.master("SUCCESS", "Telegram bot is running");
   console.log(`\x1b[1m\x1b[33m${("COPYRIGHT:")}\x1b[0m\x1b[1m\x1b[37m \x1b[0m\x1b[1m\x1b[36m${("Project GoatBot v2 created by ntkhang03 (https://github.com/ntkhang03), please do not sell this source code or claim it as your own. Thank you!")}\x1b[0m`);
   logColor("#f5ab00", createLine());
 }
-
+ 
 global.GoatBot.reLoginBot = startBot;
 startBot().catch((err) => {
   global.statusAccountBot = "can't login";
   log.err("LOGIN TELEGRAM", "Startup error", err);
 });
+ 
